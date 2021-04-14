@@ -1,0 +1,13 @@
+**/node_modules
+node_modules/
+vscode-client/out
+server/out
+.DS_Store
+*.log
+coverage
+.eslintcache
+*.tgz
+*.tar.gz
+*.zip
+build/
+dist/
