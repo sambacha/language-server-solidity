@@ -1,22 +1,23 @@
-import BashLanguageServer from 'bash-language-server';
+import SolidityLanguageServer from 'solidity-language-server';
 import {
   createConnection,
-  IConnection,
+//  IConnection,
+  Connection,
   InitializeParams,
   InitializeResult,
   ProposedFeatures,
 } from 'vscode-languageserver';
 
-const connection: IConnection = createConnection(ProposedFeatures.all);
+const connection: Connection = createConnection(ProposedFeatures.all);
 
 connection.onInitialize(
   async (params: InitializeParams): Promise<InitializeResult> => {
-    connection.console.info('BashLanguageServer initializing...');
+    connection.console.info('SolidityLanguageServer initializing...');
 
-    const server = await BashLanguageServer.initialize(connection, params);
+    const server = await SolidityLanguageServer.initialize(connection, params);
     server.register(connection);
 
-    connection.console.info('BashLanguageServer initialized');
+    connection.console.info('SolidityLanguageServer initialized');
 
     return {
       capabilities: server.capabilities(),

@@ -10,15 +10,15 @@ import {
 
 export async function activate(context: ExtensionContext) {
   const explainshellEndpoint = workspace
-    .getConfiguration('bashIde')
+    .getConfiguration('solidityIde')
     .get('explainshellEndpoint', '');
 
   const globPattern = workspace
-    .getConfiguration('bashIde')
+    .getConfiguration('solidityIde')
     .get('globPattern', '');
 
   const highlightParsingErrors = workspace
-    .getConfiguration('bashIde')
+    .getConfiguration('solidityIde')
     .get('highlightParsingErrors', false);
 
   const env: any = {

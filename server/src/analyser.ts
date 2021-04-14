@@ -60,7 +60,7 @@ export default class Analyzer {
         filePaths = await getFilePaths({ globPattern, rootPath });
       } catch (error) {
         connection.window.showWarningMessage(
-          `Failed to analyze bash files using the glob "${globPattern}". The experience will be degraded. Error: ${error.message}`
+          `Failed to analyze solidity files using the glob "${globPattern}". The experience will be degraded. Error: ${error.message}`
         );
       }
 
@@ -454,7 +454,7 @@ export default class Analyzer {
   }
 
   private getAllSymbols(): LSP.SymbolInformation[] {
-    // NOTE: this could be cached, it takes < 1 ms to generate for a project with 250 bash files...
+    // NOTE: this could be cached, it takes < 1 ms to generate for a project with 250 solidity files...
     const symbols: LSP.SymbolInformation[] = [];
 
     Object.keys(this.uriToDeclarations).forEach((uri) => {

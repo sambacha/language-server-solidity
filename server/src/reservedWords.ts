@@ -1,4 +1,4 @@
-// https://www.gnu.org/software/bash/manual/html_node/Reserved-Word-Index.html
+// https://www.gnu.org/software/solidity/manual/html_node/Reserved-Word-Index.html
 
 export const LIST = [
   '!',

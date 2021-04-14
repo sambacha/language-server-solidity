@@ -2,7 +2,7 @@
 
 import * as LSP from 'vscode-languageserver';
 
-import BashServer from './server';
+import SolidityServer from './server';
 
 const pkg = require('../package');
 
@@ -20,7 +20,7 @@ export function listen() {
         `Initialized server v. ${pkg.version} for ${params.rootUri}`
       );
 
-      const server = await BashServer.initialize(connection, params);
+      const server = await SolidityServer.initialize(connection, params);
 
       server.register(connection);
 

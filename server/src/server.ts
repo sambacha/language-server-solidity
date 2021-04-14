@@ -9,17 +9,17 @@ import * as config from './config';
 import Executables from './executables';
 import { initializeParser } from './parser';
 import * as ReservedWords from './reservedWords';
-import { BashCompletionItem, CompletionItemDataType } from './types';
+import { SolidityCompletionItem, CompletionItemDataType } from './types';
 import { uniqueBasedOnHash } from './util/array';
 import { getShellDocumentation } from './util/sh';
 
 const PARAMETER_EXPANSION_PREFIXES = new Set(['$', '${']);
 
 /**
- * The BashServer glues together the separate components to implement
+ * The SolidityServer glues together the separate components to implement
  * the various parts of the Language Server Protocol.
  */
-export default class BashServer {
+export default class SolidityServer {
   /**
    * Initialize the server based on a connection to the client and the protocols
    * initialization parameters.
@@ -27,7 +27,7 @@ export default class BashServer {
   public static async initialize(
     connection: LSP.Connection,
     { rootPath }: LSP.InitializeParams
-  ): Promise<BashServer> {
+  ): Promise<SolidityServer> {
     const parser = await initializeParser();
 
     const { PATH } = process.env;
@@ -42,7 +42,7 @@ export default class BashServer {
     ]).then((xs) => {
       const executables = xs[0];
       const analyzer = xs[1];
-      return new BashServer(connection, executables, analyzer);
+      return new SolidityServer(connection, executables, analyzer);
     });
   }
 
@@ -174,7 +174,7 @@ export default class BashServer {
   }: {
     symbols: LSP.SymbolInformation[];
     currentUri: string;
-  }): BashCompletionItem[] {
+  }): SolidityCompletionItem[] {
     return deduplicateSymbols({ symbols, currentUri }).map(
       (symbol: LSP.SymbolInformation) => ({
         label: symbol.name,
@@ -323,7 +323,7 @@ export default class BashServer {
 
   private onCompletion(
     params: LSP.TextDocumentPositionParams
-  ): BashCompletionItem[] {
+  ): SolidityCompletionItem[] {
     const word = this.getWordAtPoint({
       ...params,
       position: {
@@ -427,7 +427,7 @@ export default class BashServer {
   ): Promise<LSP.CompletionItem> {
     const {
       data: { name, type },
-    } = item as BashCompletionItem;
+    } = item as SolidityCompletionItem;
 
     this.connection.console.log(
       `onCompletionResolve name=${name} type=${type}`
