@@ -31,7 +31,7 @@ export default class Analyzer {
    * Initialize the Analyzer based on a connection to the client and an optional
    * root path.
    *
-   * If the rootPath is provided it will initialize all shell files it can find
+   * If the rootPath is provided it will initialize all solidity files it can find
    * anywhere on that path. This non-exhaustive glob is used to preload the parser.
    */
   public static async fromRoot({
@@ -76,17 +76,17 @@ export default class Analyzer {
 
         try {
           const fileContent = await readFileAsync(filePath, 'utf8');
-          const shebang = getSolcVersion(fileContent);
-          if (shebang && !isSolidityContract(shebang)) {
+          const pragma = getSolcVersion(fileContent);
+          if (pragma && !isSolidityContract(pragma)) {
             connection.console.log(
-              `Skipping file ${uri} with shebang "${shebang}"`
+              `Skipping file ${uri} with pragma "${pragma}"`
             );
             continue;
           }
 
           analyzer.analyze(
             uri,
-            LSP.TextDocument.create(uri, 'shell', 1, fileContent)
+            LSP.TextDocument.create(uri, 'solidity', 1, fileContent)
           );
         } catch (error) {
           connection.console.warn(
@@ -147,7 +147,7 @@ export default class Analyzer {
     return searcher.search(query);
   }
 
-  public async getExplainshellDocumentation({
+  public async getExplainsolidityDocumentation({
     params,
     endpoint,
   }: {
@@ -161,10 +161,10 @@ export default class Analyzer {
       column: params.position.character,
     });
 
-    // explainshell needs the whole command, not just the "word" (tree-sitter
+    // explainsolidity needs the whole command, not just the "word" (tree-sitter
     // parlance) that the user hovered over. A relatively successful heuristic
     // is to simply go up one level in the AST. If you go up too far, you'll
-    // start to include newlines, and explainshell completely balks when it
+    // start to include newlines, and explainsolidity completely balks when it
     // encounters newlines.
     const interestingNode =
       leafNode.type === 'word' ? leafNode.parent : leafNode;
@@ -182,7 +182,7 @@ export default class Analyzer {
     );
 
     // FIXME: type the response and unit test it
-    const explainshellResponse = await request({
+    const explainsolidityResponse = await request({
       uri: URI(endpoint).path('/api/explain').addQuery('cmd', cmd).toString(),
       json: true,
     });
@@ -190,14 +190,14 @@ export default class Analyzer {
     // Attaches debugging information to the return value (useful for logging to
     // VS Code output).
     const response = {
-      ...explainshellResponse,
+      ...explainsolidityResponse,
       cmd,
       cmdType: interestingNode.type,
     };
 
-    if (explainshellResponse.status === 'error') {
+    if (explainsolidityResponse.status === 'error') {
       return response;
-    } else if (!explainshellResponse.matches) {
+    } else if (!explainsolidityResponse.matches) {
       return { ...response, status: 'error' };
     } else {
       const offsetOfMousePointerInCommand =
@@ -205,7 +205,7 @@ export default class Analyzer {
           params.position
         ) - interestingNode.startIndex;
 
-      const match = explainshellResponse.matches.find(
+      const match = explainsolidityResponse.matches.find(
         (helpItem: any) =>
           helpItem.start <= offsetOfMousePointerInCommand &&
           offsetOfMousePointerInCommand < helpItem.end
