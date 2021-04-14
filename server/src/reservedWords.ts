@@ -22,10 +22,10 @@ export const LIST = [
   'time',
   'until',
   'while',
-]
+];
 
-const SET = new Set(LIST)
+const SET = new Set(LIST);
 
 export function isReservedWord(word: string): boolean {
-  return SET.has(word)
+  return SET.has(word);
 }

@@ -1,10 +1,7 @@
+export const LIST = [''];
 
-export const LIST = [
-''
-]
-
-const SET = new Set(LIST)
+const SET = new Set(LIST);
 
 export function isBuiltin(word: string): boolean {
-  return SET.has(word)
+  return SET.has(word);
 }

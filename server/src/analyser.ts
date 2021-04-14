@@ -1,26 +1,26 @@
-import * as fs from 'fs'
-import * as FuzzySearch from 'fuzzy-search'
-import * as request from 'request-promise-native'
-import * as URI from 'urijs'
-import { promisify } from 'util'
-import * as LSP from 'vscode-languageserver'
-import * as Parser from 'web-tree-sitter'
+import * as fs from 'fs';
+import * as FuzzySearch from 'fuzzy-search';
+import * as request from 'request-promise-native';
+import * as URI from 'urijs';
+import { promisify } from 'util';
+import * as LSP from 'vscode-languageserver';
+import * as Parser from 'web-tree-sitter';
 
-import { getGlobPattern } from './config'
-import { flattenArray, flattenObjectValues } from './util/flatten'
-import { getFilePaths } from './util/fs'
-import { getSolcVersion, isSolidityContract } from './util/pragma'
-import * as TreeSitterUtil from './util/tree-sitter'
+import { getGlobPattern } from './config';
+import { flattenArray, flattenObjectValues } from './util/flatten';
+import { getFilePaths } from './util/fs';
+import { getSolcVersion, isSolidityContract } from './util/pragma';
+import * as TreeSitterUtil from './util/tree-sitter';
 
-const readFileAsync = promisify(fs.readFile)
+const readFileAsync = promisify(fs.readFile);
 
-type Kinds = { [type: string]: LSP.SymbolKind }
+type Kinds = { [type: string]: LSP.SymbolKind };
 
-type Declarations = { [name: string]: LSP.SymbolInformation[] }
-type FileDeclarations = { [uri: string]: Declarations }
+type Declarations = { [name: string]: LSP.SymbolInformation[] };
+type FileDeclarations = { [uri: string]: Declarations };
 
-type Trees = { [uri: string]: Parser.Tree }
-type Texts = { [uri: string]: string }
+type Trees = { [uri: string]: Parser.Tree };
+type Texts = { [uri: string]: string };
 
 /**
  * The Analyzer uses the Abstract Syntax Trees (ASTs) that are provided by
@@ -39,71 +39,78 @@ export default class Analyzer {
     rootPath,
     parser,
   }: {
-    connection: LSP.Connection
-    rootPath: LSP.InitializeParams['rootPath']
-    parser: Parser
+    connection: LSP.Connection;
+    rootPath: LSP.InitializeParams['rootPath'];
+    parser: Parser;
   }): Promise<Analyzer> {
-    const analyzer = new Analyzer(parser)
+    const analyzer = new Analyzer(parser);
 
     if (rootPath) {
-      const globPattern = getGlobPattern()
+      const globPattern = getGlobPattern();
       connection.console.log(
-        `Analyzing files matching glob "${globPattern}" inside ${rootPath}`,
-      )
+        `Analyzing files matching glob "${globPattern}" inside ${rootPath}`
+      );
 
-      const lookupStartTime = Date.now()
+      const lookupStartTime = Date.now();
       const getTimePassed = (): string =>
-        `${(Date.now() - lookupStartTime) / 1000} seconds`
+        `${(Date.now() - lookupStartTime) / 1000} seconds`;
 
-      let filePaths: string[] = []
+      let filePaths: string[] = [];
       try {
-        filePaths = await getFilePaths({ globPattern, rootPath })
+        filePaths = await getFilePaths({ globPattern, rootPath });
       } catch (error) {
         connection.window.showWarningMessage(
-          `Failed to analyze bash files using the glob "${globPattern}". The experience will be degraded. Error: ${error.message}`,
-        )
+          `Failed to analyze bash files using the glob "${globPattern}". The experience will be degraded. Error: ${error.message}`
+        );
       }
 
       // TODO: we could load all files without extensions: globPattern: '**/[^.]'
 
       connection.console.log(
-        `Glob resolved with ${filePaths.length} files after ${getTimePassed()}`,
-      )
+        `Glob resolved with ${filePaths.length} files after ${getTimePassed()}`
+      );
 
       for (const filePath of filePaths) {
-        const uri = `file://${filePath}`
-        connection.console.log(`Analyzing ${uri}`)
+        const uri = `file://${filePath}`;
+        connection.console.log(`Analyzing ${uri}`);
 
         try {
-          const fileContent = await readFileAsync(filePath, 'utf8')
-          const shebang = getSolcVersion(fileContent)
+          const fileContent = await readFileAsync(filePath, 'utf8');
+          const shebang = getSolcVersion(fileContent);
           if (shebang && !isSolidityContract(shebang)) {
-            connection.console.log(`Skipping file ${uri} with shebang "${shebang}"`)
-            continue
+            connection.console.log(
+              `Skipping file ${uri} with shebang "${shebang}"`
+            );
+            continue;
           }
 
-          analyzer.analyze(uri, LSP.TextDocument.create(uri, 'shell', 1, fileContent))
+          analyzer.analyze(
+            uri,
+            LSP.TextDocument.create(uri, 'shell', 1, fileContent)
+          );
         } catch (error) {
-          connection.console.warn(`Failed analyzing ${uri}. Error: ${error.message}`)
+          connection.console.warn(
+            `Failed analyzing ${uri}. Error: ${error.message}`
+          );
         }
       }
 
-      connection.console.log(`Analyzer finished after ${getTimePassed()}`)
+      connection.console.log(`Analyzer finished after ${getTimePassed()}`);
     }
 
-    return analyzer
+    return analyzer;
   }
 
-  private parser: Parser
-// FIXME vscode-languageserver-textdocument 
-  private uriToTextDocument: { [uri: string]: LSP.TextDocument } = {}
+  private parser: Parser;
+  // FIXME vscode-languageserver-textdocument
+  private uriToTextDocument: { [uri: string]: LSP.TextDocument } = {};
 
-  private uriToTreeSitterTrees: Trees = {}
+  private uriToTreeSitterTrees: Trees = {};
 
   // We need this to find the word at a given point etc.
-  private uriToFileContent: Texts = {}
+  private uriToFileContent: Texts = {};
 
-  private uriToDeclarations: FileDeclarations = {}
+  private uriToDeclarations: FileDeclarations = {};
 
   private treeSitterTypeToLSPKind: Kinds = {
     // These keys are using underscores as that's the naming convention in tree-sitter.
@@ -112,22 +119,22 @@ export default class Analyzer {
     function_definition: LSP.SymbolKind.Function,
     variable_assignment: LSP.SymbolKind.Variable,
     /* eslint-enable @typescript-eslint/camelcase */
-  }
+  };
 
   public constructor(parser: Parser) {
-    this.parser = parser
+    this.parser = parser;
   }
 
   /**
    * Find all the locations where something named name has been defined.
    */
   public findDefinition(name: string): LSP.Location[] {
-    const symbols: LSP.SymbolInformation[] = []
-    Object.keys(this.uriToDeclarations).forEach(uri => {
-      const declarationNames = this.uriToDeclarations[uri][name] || []
-      declarationNames.forEach(d => symbols.push(d))
-    })
-    return symbols.map(s => s.location)
+    const symbols: LSP.SymbolInformation[] = [];
+    Object.keys(this.uriToDeclarations).forEach((uri) => {
+      const declarationNames = this.uriToDeclarations[uri][name] || [];
+      declarationNames.forEach((d) => symbols.push(d));
+    });
+    return symbols.map((s) => s.location);
   }
 
   /**
@@ -136,78 +143,81 @@ export default class Analyzer {
   public search(query: string): LSP.SymbolInformation[] {
     const searcher = new FuzzySearch(this.getAllSymbols(), ['name'], {
       caseSensitive: true,
-    })
-    return searcher.search(query)
+    });
+    return searcher.search(query);
   }
 
   public async getExplainshellDocumentation({
     params,
     endpoint,
   }: {
-    params: LSP.TextDocumentPositionParams
-    endpoint: string
+    params: LSP.TextDocumentPositionParams;
+    endpoint: string;
   }): Promise<any> {
     const leafNode = this.uriToTreeSitterTrees[
       params.textDocument.uri
     ].rootNode.descendantForPosition({
       row: params.position.line,
       column: params.position.character,
-    })
+    });
 
     // explainshell needs the whole command, not just the "word" (tree-sitter
     // parlance) that the user hovered over. A relatively successful heuristic
     // is to simply go up one level in the AST. If you go up too far, you'll
     // start to include newlines, and explainshell completely balks when it
     // encounters newlines.
-    const interestingNode = leafNode.type === 'word' ? leafNode.parent : leafNode
+    const interestingNode =
+      leafNode.type === 'word' ? leafNode.parent : leafNode;
 
     if (!interestingNode) {
       return {
         status: 'error',
         message: 'no interestingNode found',
-      }
+      };
     }
 
     const cmd = this.uriToFileContent[params.textDocument.uri].slice(
       interestingNode.startIndex,
-      interestingNode.endIndex,
-    )
+      interestingNode.endIndex
+    );
 
     // FIXME: type the response and unit test it
     const explainshellResponse = await request({
-      uri: URI(endpoint)
-        .path('/api/explain')
-        .addQuery('cmd', cmd)
-        .toString(),
+      uri: URI(endpoint).path('/api/explain').addQuery('cmd', cmd).toString(),
       json: true,
-    })
+    });
 
     // Attaches debugging information to the return value (useful for logging to
     // VS Code output).
-    const response = { ...explainshellResponse, cmd, cmdType: interestingNode.type }
+    const response = {
+      ...explainshellResponse,
+      cmd,
+      cmdType: interestingNode.type,
+    };
 
     if (explainshellResponse.status === 'error') {
-      return response
+      return response;
     } else if (!explainshellResponse.matches) {
-      return { ...response, status: 'error' }
+      return { ...response, status: 'error' };
     } else {
       const offsetOfMousePointerInCommand =
-        this.uriToTextDocument[params.textDocument.uri].offsetAt(params.position) -
-        interestingNode.startIndex
+        this.uriToTextDocument[params.textDocument.uri].offsetAt(
+          params.position
+        ) - interestingNode.startIndex;
 
       const match = explainshellResponse.matches.find(
         (helpItem: any) =>
           helpItem.start <= offsetOfMousePointerInCommand &&
-          offsetOfMousePointerInCommand < helpItem.end,
-      )
+          offsetOfMousePointerInCommand < helpItem.end
+      );
 
-      const helpHTML = match && match.helpHTML
+      const helpHTML = match && match.helpHTML;
 
       if (!helpHTML) {
-        return { ...response, status: 'error' }
+        return { ...response, status: 'error' };
       }
 
-      return { ...response, helpHTML }
+      return { ...response, helpHTML };
     }
   }
 
@@ -215,8 +225,8 @@ export default class Analyzer {
    * Find all the locations where something named name has been defined.
    */
   public findReferences(name: string): LSP.Location[] {
-    const uris = Object.keys(this.uriToTreeSitterTrees)
-    return flattenArray(uris.map(uri => this.findOccurrences(uri, name)))
+    const uris = Object.keys(this.uriToTreeSitterTrees);
+    return flattenArray(uris.map((uri) => this.findOccurrences(uri, name)));
   }
 
   /**
@@ -224,41 +234,41 @@ export default class Analyzer {
    * It's currently not scope-aware.
    */
   public findOccurrences(uri: string, query: string): LSP.Location[] {
-    const tree = this.uriToTreeSitterTrees[uri]
-    const contents = this.uriToFileContent[uri]
+    const tree = this.uriToTreeSitterTrees[uri];
+    const contents = this.uriToFileContent[uri];
 
-    const locations: LSP.Location[] = []
+    const locations: LSP.Location[] = [];
 
-    TreeSitterUtil.forEach(tree.rootNode, n => {
-      let name: null | string = null
-      let range: null | LSP.Range = null
+    TreeSitterUtil.forEach(tree.rootNode, (n) => {
+      let name: null | string = null;
+      let range: null | LSP.Range = null;
 
       if (TreeSitterUtil.isReference(n)) {
-        const node = n.firstNamedChild || n
-        name = contents.slice(node.startIndex, node.endIndex)
-        range = TreeSitterUtil.range(node)
+        const node = n.firstNamedChild || n;
+        name = contents.slice(node.startIndex, node.endIndex);
+        range = TreeSitterUtil.range(node);
       } else if (TreeSitterUtil.isDefinition(n)) {
-        const namedNode = n.firstNamedChild
+        const namedNode = n.firstNamedChild;
         if (namedNode) {
-          name = contents.slice(namedNode.startIndex, namedNode.endIndex)
-          range = TreeSitterUtil.range(namedNode)
+          name = contents.slice(namedNode.startIndex, namedNode.endIndex);
+          range = TreeSitterUtil.range(namedNode);
         }
       }
 
       if (name === query && range !== null) {
-        locations.push(LSP.Location.create(uri, range))
+        locations.push(LSP.Location.create(uri, range));
       }
-    })
+    });
 
-    return locations
+    return locations;
   }
 
   /**
    * Find all symbol definitions in the given file.
    */
   public findSymbolsForFile({ uri }: { uri: string }): LSP.SymbolInformation[] {
-    const declarationsInFile = this.uriToDeclarations[uri] || {}
-    return flattenObjectValues(declarationsInFile)
+    const declarationsInFile = this.uriToDeclarations[uri] || {};
+    return flattenObjectValues(declarationsInFile);
   }
 
   /**
@@ -268,22 +278,22 @@ export default class Analyzer {
     exactMatch,
     word,
   }: {
-    exactMatch: boolean
-    word: string
+    exactMatch: boolean;
+    word: string;
   }): LSP.SymbolInformation[] {
-    const symbols: LSP.SymbolInformation[] = []
+    const symbols: LSP.SymbolInformation[] = [];
 
-    Object.keys(this.uriToDeclarations).forEach(uri => {
-      const declarationsInFile = this.uriToDeclarations[uri] || {}
-      Object.keys(declarationsInFile).map(name => {
-        const match = exactMatch ? name === word : name.startsWith(word)
+    Object.keys(this.uriToDeclarations).forEach((uri) => {
+      const declarationsInFile = this.uriToDeclarations[uri] || {};
+      Object.keys(declarationsInFile).map((name) => {
+        const match = exactMatch ? name === word : name.startsWith(word);
         if (match) {
-          declarationsInFile[name].forEach(symbol => symbols.push(symbol))
+          declarationsInFile[name].forEach((symbol) => symbols.push(symbol));
         }
-      })
-    })
+      });
+    });
 
-    return symbols
+    return symbols;
   }
 
   /**
@@ -294,16 +304,16 @@ export default class Analyzer {
    *
    */
   public analyze(uri: string, document: LSP.TextDocument): LSP.Diagnostic[] {
-    const contents = document.getText()
+    const contents = document.getText();
 
-    const tree = this.parser.parse(contents)
+    const tree = this.parser.parse(contents);
 
-    this.uriToTextDocument[uri] = document
-    this.uriToTreeSitterTrees[uri] = tree
-    this.uriToDeclarations[uri] = {}
-    this.uriToFileContent[uri] = contents
+    this.uriToTextDocument[uri] = document;
+    this.uriToTreeSitterTrees[uri] = tree;
+    this.uriToDeclarations[uri] = {};
+    this.uriToFileContent[uri] = contents;
 
-    const problems: LSP.Diagnostic[] = []
+    const problems: LSP.Diagnostic[] = [];
 
     TreeSitterUtil.forEach(tree.rootNode, (n: Parser.SyntaxNode) => {
       if (n.type === 'ERROR') {
@@ -311,28 +321,31 @@ export default class Analyzer {
           LSP.Diagnostic.create(
             TreeSitterUtil.range(n),
             'Failed to parse expression',
-            LSP.DiagnosticSeverity.Error,
-          ),
-        )
-        return
+            LSP.DiagnosticSeverity.Error
+          )
+        );
+        return;
       } else if (TreeSitterUtil.isDefinition(n)) {
-        const named = n.firstNamedChild
+        const named = n.firstNamedChild;
 
         if (named === null) {
-          return
+          return;
         }
 
-        const name = contents.slice(named.startIndex, named.endIndex)
-        const namedDeclarations = this.uriToDeclarations[uri][name] || []
+        const name = contents.slice(named.startIndex, named.endIndex);
+        const namedDeclarations = this.uriToDeclarations[uri][name] || [];
 
-        const parent = TreeSitterUtil.findParent(n, p => p.type === 'function_definition')
+        const parent = TreeSitterUtil.findParent(
+          n,
+          (p) => p.type === 'function_definition'
+        );
         const parentName =
           parent && parent.firstNamedChild
             ? contents.slice(
                 parent.firstNamedChild.startIndex,
-                parent.firstNamedChild.endIndex,
+                parent.firstNamedChild.endIndex
               )
-            : '' // TODO: unsure what we should do here?
+            : ''; // TODO: unsure what we should do here?
 
         namedDeclarations.push(
           LSP.SymbolInformation.create(
@@ -340,12 +353,12 @@ export default class Analyzer {
             this.treeSitterTypeToLSPKind[n.type],
             TreeSitterUtil.range(n),
             uri,
-            parentName,
-          ),
-        )
-        this.uriToDeclarations[uri][name] = namedDeclarations
+            parentName
+          )
+        );
+        this.uriToDeclarations[uri][name] = namedDeclarations;
       }
-    })
+    });
 
     function findMissingNodes(node: Parser.SyntaxNode) {
       if (node.isMissing()) {
@@ -353,102 +366,104 @@ export default class Analyzer {
           LSP.Diagnostic.create(
             TreeSitterUtil.range(node),
             `Syntax error: expected "${node.type}" somewhere in the file`,
-            LSP.DiagnosticSeverity.Warning,
-          ),
-        )
+            LSP.DiagnosticSeverity.Warning
+          )
+        );
       } else if (node.hasError()) {
-        node.children.forEach(findMissingNodes)
+        node.children.forEach(findMissingNodes);
       }
     }
 
-    findMissingNodes(tree.rootNode)
+    findMissingNodes(tree.rootNode);
 
-    return problems
+    return problems;
   }
 
   /**
    * Find the full word at the given point.
    */
   public wordAtPoint(uri: string, line: number, column: number): string | null {
-    const document = this.uriToTreeSitterTrees[uri]
+    const document = this.uriToTreeSitterTrees[uri];
 
     if (!document.rootNode) {
       // Check for lacking rootNode (due to failed parse?)
-      return null
+      return null;
     }
 
-    const node = document.rootNode.descendantForPosition({ row: line, column })
+    const node = document.rootNode.descendantForPosition({ row: line, column });
 
     if (!node || node.childCount > 0 || node.text.trim() === '') {
-      return null
+      return null;
     }
 
-    return node.text.trim()
+    return node.text.trim();
   }
 
   /**
    * Find a block of comments above a line position
    */
   public commentsAbove(uri: string, line: number): string | null {
-    const doc = this.uriToTextDocument[uri]
+    const doc = this.uriToTextDocument[uri];
 
-    const commentBlock = []
+    const commentBlock = [];
 
     // start from the line above
-    let commentBlockIndex = line - 1
+    let commentBlockIndex = line - 1;
 
     // will return the comment string without the comment '#'
     // and without leading whitespace, or null if the line 'l'
     // is not a comment line
     const getComment = (l: string): null | string => {
       // this regexp has to be defined within the function
-      const commentRegExp = /^\s*#\s*(.*)/g
-      const matches = commentRegExp.exec(l)
-      return matches ? matches[1].trim() : null
-    }
+      const commentRegExp = /^\s*#\s*(.*)/g;
+      const matches = commentRegExp.exec(l);
+      return matches ? matches[1].trim() : null;
+    };
 
     let currentLine = doc.getText({
       start: { line: commentBlockIndex, character: 0 },
       end: { line: commentBlockIndex + 1, character: 0 },
-    })
+    });
 
     // iterate on every line above and including
     // the current line until getComment returns null
-    let currentComment: string | null = ''
+    let currentComment: string | null = '';
     while ((currentComment = getComment(currentLine))) {
-      commentBlock.push(currentComment)
-      commentBlockIndex -= 1
+      commentBlock.push(currentComment);
+      commentBlockIndex -= 1;
       currentLine = doc.getText({
         start: { line: commentBlockIndex, character: 0 },
         end: { line: commentBlockIndex + 1, character: 0 },
-      })
+      });
     }
 
     if (commentBlock.length) {
       // since we searched from bottom up, we then reverse
       // the lines so that it reads top down.
-      return commentBlock.reverse().join('\n')
+      return commentBlock.reverse().join('\n');
     }
 
     // no comments found above line:
-    return null
+    return null;
   }
 
   public getAllVariableSymbols(): LSP.SymbolInformation[] {
-    return this.getAllSymbols().filter(symbol => symbol.kind === LSP.SymbolKind.Variable)
+    return this.getAllSymbols().filter(
+      (symbol) => symbol.kind === LSP.SymbolKind.Variable
+    );
   }
 
   private getAllSymbols(): LSP.SymbolInformation[] {
     // NOTE: this could be cached, it takes < 1 ms to generate for a project with 250 bash files...
-    const symbols: LSP.SymbolInformation[] = []
+    const symbols: LSP.SymbolInformation[] = [];
 
-    Object.keys(this.uriToDeclarations).forEach(uri => {
-      Object.keys(this.uriToDeclarations[uri]).forEach(name => {
-        const declarationNames = this.uriToDeclarations[uri][name] || []
-        declarationNames.forEach(d => symbols.push(d))
-      })
-    })
+    Object.keys(this.uriToDeclarations).forEach((uri) => {
+      Object.keys(this.uriToDeclarations[uri]).forEach((name) => {
+        const declarationNames = this.uriToDeclarations[uri][name] || [];
+        declarationNames.forEach((d) => symbols.push(d));
+      });
+    });
 
-    return symbols
+    return symbols;
   }
 }

@@ -7,15 +7,11 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "declaration": true,
-    "lib": [
-      "es2016"
-    ],
+    "lib": ["es2016"],
     "rootDir": ".",
     "sourceMap": true
   },
-  "include": [
-    "testing"
-  ],
+  "include": ["testing"],
   "exclude": [
     "node_modules",
     "**/__tests__/*",
@@ -24,8 +20,5 @@
     "server/setupJest.ts",
     "testing"
   ],
-  "references": [
-    { "path": "./vscode-client" },
-    { "path": "./server" }
-  ]
+  "references": [{ "path": "./vscode-client" }, { "path": "./server" }]
 }

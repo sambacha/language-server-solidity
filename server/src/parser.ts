@@ -1,8 +1,8 @@
-import * as Parser from 'web-tree-sitter'
+import * as Parser from 'web-tree-sitter';
 
 export async function initializeParser(): Promise<Parser> {
-  await Parser.init()
-  const parser = new Parser()
+  await Parser.init();
+  const parser = new Parser();
 
   /**
    * See https://github.com/tree-sitter/tree-sitter/tree/master/lib/binding_web#generate-wasm-language-files
@@ -20,8 +20,10 @@ export async function initializeParser(): Promise<Parser> {
    * "tree-sitter-bash": "^0.16.1",
    * "tree-sitter-cli": "^0.16.5"
    */
-  const lang = await Parser.Language.load(`${__dirname}/../tree-sitter-bash.wasm`)
+  const lang = await Parser.Language.load(
+    `${__dirname}/../tree-sitter-bash.wasm`
+  );
 
-  parser.setLanguage(lang)
-  return parser
+  parser.setLanguage(lang);
+  return parser;
 }

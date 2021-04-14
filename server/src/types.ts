@@ -1,4 +1,4 @@
-import * as LSP from 'vscode-languageserver'
+import * as LSP from 'vscode-languageserver';
 
 export enum CompletionItemDataType {
   Builtin,
@@ -9,7 +9,7 @@ export enum CompletionItemDataType {
 
 export interface BashCompletionItem extends LSP.CompletionItem {
   data: {
-    type: CompletionItemDataType
-    name: string
-  }
+    type: CompletionItemDataType;
+    name: string;
+  };
 }

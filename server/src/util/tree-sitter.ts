@@ -1,10 +1,10 @@
-import { Range } from 'vscode-languageserver/lib/main'
-import { SyntaxNode } from 'web-tree-sitter'
+import { Range } from 'vscode-languageserver/lib/main';
+import { SyntaxNode } from 'web-tree-sitter';
 
 export function forEach(node: SyntaxNode, cb: (n: SyntaxNode) => void) {
-  cb(node)
+  cb(node);
   if (node.children.length) {
-    node.children.forEach(n => forEach(n, cb))
+    node.children.forEach((n) => forEach(n, cb));
   }
 }
 
@@ -13,8 +13,8 @@ export function range(n: SyntaxNode): Range {
     n.startPosition.row,
     n.startPosition.column,
     n.endPosition.row,
-    n.endPosition.column,
-  )
+    n.endPosition.column
+  );
 }
 
 export function isDefinition(n: SyntaxNode): boolean {
@@ -23,9 +23,9 @@ export function isDefinition(n: SyntaxNode): boolean {
     // variable_assignment
     case 'variable_assignment':
     case 'function_definition':
-      return true
+      return true;
     default:
-      return false
+      return false;
   }
 }
 
@@ -33,22 +33,22 @@ export function isReference(n: SyntaxNode): boolean {
   switch (n.type) {
     case 'variable_name':
     case 'command_name':
-      return true
+      return true;
     default:
-      return false
+      return false;
   }
 }
 
 export function findParent(
   start: SyntaxNode,
-  predicate: (n: SyntaxNode) => boolean,
+  predicate: (n: SyntaxNode) => boolean
 ): SyntaxNode | null {
-  let node = start.parent
+  let node = start.parent;
   while (node !== null) {
     if (predicate(node)) {
-      return node
+      return node;
     }
-    node = node.parent
+    node = node.parent;
   }
-  return null
+  return null;
 }

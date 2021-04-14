@@ -1,12 +1,5 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": [
-    "node_modules"
-  ],
-  "include": [
-    "*.*",
-    "server",
-    "testing",
-    "vscode-client"
-  ]
+  "exclude": ["node_modules"],
+  "include": ["*.*", "server", "testing", "vscode-client"]
 }

@@ -1,3 +1,3 @@
 export function isWindows() {
-  return process.platform === 'win32'
+  return process.platform === 'win32';
 }
