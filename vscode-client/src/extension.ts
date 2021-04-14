@@ -21,7 +21,7 @@ export async function activate(context: ExtensionContext) {
 
   const env: any = {
     ...process.env,
-    EXPLAINSHELL_ENDPOINT: explainshellEndpoint,
+    EXPLAINSOLIDITY_ENDPOINT: explainshellEndpoint,
     GLOB_PATTERN: globPattern,
     HIGHLIGHT_PARSING_ERRORS: highlightParsingErrors,
   }
@@ -55,13 +55,13 @@ export async function activate(context: ExtensionContext) {
       },
     ],
     synchronize: {
-      configurationSection: 'Bash IDE',
+      configurationSection: 'Solidity IDE',
       // Notify the server about file changes to '.clientrc files contain in the workspace
       fileEvents: workspace.createFileSystemWatcher('**/.clientrc'),
     },
   }
 
-  const client = new LanguageClient('Bash IDE', 'Bash IDE', serverOptions, clientOptions)
+  const client = new LanguageClient('Solidity IDE', 'Solidity IDE', serverOptions, clientOptions)
 
   // Push the disposable to the context's subscriptions so that the
   // client can be deactivated on extension deactivation
