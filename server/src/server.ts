@@ -206,13 +206,13 @@ export default class SolidityServer {
       return null;
     }
 
-    const explainshellEndpoint = config.getExplainshellEndpoint();
-    if (explainshellEndpoint) {
-      this.connection.console.log(`Query ${explainshellEndpoint}`);
+    const explainsolidityEndpoint = config.getexplainsolidityEndpoint();
+    if (explainsolidityEndpoint) {
+      this.connection.console.log(`Query ${explainsolidityEndpoint}`);
       try {
         const response = await this.analyzer.getExplainshellDocumentation({
           params,
-          endpoint: explainshellEndpoint,
+          endpoint: explainsolidityEndpoint,
         });
 
         if (response.status === 'error') {

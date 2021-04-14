@@ -1,27 +1,20 @@
-// https://www.gnu.org/software/solidity/manual/html_node/Reserved-Word-Index.html
+// https://docs.soliditylang.org/en/v0.6.8/grammar.html
 
 export const LIST = [
-  '!',
-  '[[',
-  ']]',
-  '{',
-  '}',
+  'after',
   'case',
-  'do',
-  'done',
-  'elif',
-  'else',
-  'esac',
-  'fi',
-  'for',
-  'function',
-  'if',
+  'default',
+  'final',
   'in',
-  'select',
-  'then',
-  'time',
-  'until',
-  'while',
+  'inline',
+  'let',
+  'match',
+  'null',
+  'of',
+  'relocatable',
+  'static',
+  'switch',
+  'typeof',
 ];
 
 const SET = new Set(LIST);

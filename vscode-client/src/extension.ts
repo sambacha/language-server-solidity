@@ -9,9 +9,9 @@ import {
 } from 'vscode-languageclient';
 
 export async function activate(context: ExtensionContext) {
-  const explainshellEndpoint = workspace
+  const explainsolidityEndpoint = workspace
     .getConfiguration('solidityIde')
-    .get('explainshellEndpoint', '');
+    .get('explainsolidityEndpoint', '');
 
   const globPattern = workspace
     .getConfiguration('solidityIde')
@@ -23,7 +23,7 @@ export async function activate(context: ExtensionContext) {
 
   const env: any = {
     ...process.env,
-    EXPLAINSOLIDITY_ENDPOINT: explainshellEndpoint,
+    EXPLAINSOLIDITY_ENDPOINT: explainsolidityEndpoint,
     GLOB_PATTERN: globPattern,
     HIGHLIGHT_PARSING_ERRORS: highlightParsingErrors,
   };
@@ -49,6 +49,7 @@ export async function activate(context: ExtensionContext) {
     debug: debugServerExecutable,
   };
 
+  // FIXME LanguageClientOptions
   const clientOptions: LanguageClientOptions = {
     documentSelector: [
       {
