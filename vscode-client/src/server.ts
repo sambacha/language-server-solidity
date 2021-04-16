@@ -1,7 +1,7 @@
 import SolidityLanguageServer from 'solidity-language-server';
 import {
   createConnection,
-//  IConnection,
+  //  IConnection,
   Connection,
   InitializeParams,
   InitializeResult,
